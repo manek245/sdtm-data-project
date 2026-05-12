@@ -1,4 +1,5 @@
-# SDTM Data Pipeline — Clinical Trial Data Standardization
+# SDTM Data Pipeline 
+# Clinical Trial Data Standardization
 
 This project was built as part of learning how to work with real clinical trial data in R and SQL. The idea was simple — take raw data collected during a clinical study, clean it up properly, and load it into a database where it can be queried and analyzed. The output follows the SDTM format (Study Data Tabulation Model), which is a standard used in clinical research to organize patient-level data in a consistent and structured way.
 
