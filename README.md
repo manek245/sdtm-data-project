@@ -1,38 +1,83 @@
 # SDTM Data Pipeline — Clinical Trial Data Standardization
 
-This project was built as part of learning how to work with real clinical trial data in R. The goal was to take raw data collected during a clinical study — scattered across multiple Excel and CSV files — and turn it into clean, standardized tables that follow the SDTM format (Study Data Tabulation Model), which is a widely used standard in clinical research for organizing patient-level data.
+This project was built as part of learning how to work with real clinical trial data in R and SQL. The idea was simple — take raw data collected during a clinical study, clean it up properly, and load it into a database where it can be queried and analyzed. The output follows the SDTM format (Study Data Tabulation Model), which is a standard used in clinical research to organize patient-level data in a consistent and structured way.
 
-## What the project does
+## Dataset
 
-The source data comes from five files: patient consent records, demographics, dosing/infusion visits, eligibility checks, and randomization assignments. Each file covers a different part of the trial and they all need to be connected through a common patient ID to make sense together.
+The source data comes from five files collected during a clinical trial involving 30 patients across multiple countries. The trial tested a treatment called PEAR14 against a placebo. Data was collected across different stages of the trial — consent, eligibility, randomization, demographics, and infusion visits.
 
-The pipeline reads all of these files, cleans and transforms the data in R, and loads the results into a SQL Server database called `clindata`. From there, SQL queries can be used to explore and present the data.
+| File | Contents |
+|------|----------|
+| ICF.csv | Patient consent dates, study ID, patient ID, withdrawal info |
+| Demo.xlsx | Age, gender (numeric coded), race (checklist), ethnicity |
+| Dosing.xlsx | One row per infusion visit — date, time, dose, treatment arm |
+| elig.xlsx | Eligibility flag and inclusion/exclusion criteria scores |
+| rand.xlsx | Assigned treatment arm and randomization date (21 patients) |
 
-## Files
+## Project Structure
 
-- **DM.R** — Creates the Demographics domain. Reads ICF, Demo, Dosing, and Randomization files, joins them by patient ID, and builds a clean table with one row per patient. Handles things like splitting the patient ID into country, site, and subject number, mapping numeric gender and ethnicity codes to proper labels, and deriving race from a checklist format.
+```
+sdtm-data-project/
+├── data/               Raw source files (CSV and XLSX)
+├── DM.R                Creates the Demographics domain
+├── EX.R                Creates the Exposure domain
+├── push_to_db.R        Loads dm and ex into SQL Server
+├── schema.sql          Creates the clindata database and table structure
+├── queries.sql         SQL queries for data analysis
+├── README.md
+└── renv.lock           Package version snapshot
+```
 
-- **EX.R** — Creates the Exposure domain. Reads the Dosing file and produces one row per infusion visit. Calculates which visit number each row is for each patient, extracts the numeric dose from a text string, and computes the study day relative to each patient's first infusion.
+## Database Schema
 
-- **push_to_db.R** — Connects to SQL Server and loads the dm and ex tables into the clindata database. Checks if the tables already exist before pushing so nothing gets overwritten by accident.
+The database is called `clindata` and contains two tables:
 
-- **queries.sql** — A set of SQL queries written to answer questions about the data once it's in the database. Includes simple counts, patient profiles, and more complex questions using joins and CTEs.
+**dm** — one row per patient. Primary key is `USUBJID` (unique subject ID). Contains demographics, treatment arm assignment, consent and reference dates, and geographic info.
 
-## Why this is useful
+**ex** — one row per infusion visit. Primary key is `(USUBJID, EXSEQ)`. Foreign key links back to `dm` via `USUBJID`. Contains dose, infusion datetime, study day, and dose adjustment info.
 
-Clinical trial data is almost never clean or ready to use out of the box. It comes from different sources, in different formats, with inconsistent naming and coding. This pipeline solves that by bringing everything together in one place and applying consistent rules so the output is predictable and reliable.
+Both tables have indexes on commonly queried columns like `COUNTRY`, `ARM`, and `USUBJID` to keep queries fast.
 
-Having the final data in SQL also means it can be easily queried, shared, or connected to other tools without needing to re-run R every time.
+## Pipeline
 
-## What questions it can answer
+The pipeline runs in four steps:
 
-- How many patients participated and where are they from?
-- What is the age and gender breakdown of the study population?
-- Which patients were on placebo vs active treatment?
-- How many infusion visits did each patient complete?
-- Were there any dose adjustments and why?
-- Which patients withdrew from the study?
+1. **DM.R** — reads ICF, Demo, Dosing, and Randomization files, joins them by patient ID, applies all cleaning and transformation, and produces the `dm` data frame (30 rows, one per patient)
+2. **EX.R** — reads the Dosing file, calculates visit sequences and study days, extracts numeric dose values, and produces the `ex` data frame (142 rows, one per infusion visit)
+3. **push_to_db.R** — connects to SQL Server on localhost and loads `dm` and `ex` into the `clindata` database. Skips tables that already exist to avoid accidental overwrites
+4. **queries.sql** — run in SSMS to explore and analyze the loaded data
 
-## Tech used
+## How to Run
 
-R, RStudio, readr, readxl, dplyr, lubridate, DBI, odbc, SQL Server
+1. Open the project in RStudio by double-clicking the `.Rproj` file
+2. Run `renv::restore()` to install all required packages
+3. Run `schema.sql` in SSMS to create the database and table structure
+4. Run `DM.R` in RStudio
+5. Run `EX.R` in RStudio
+6. Run `push_to_db.R` in RStudio to load the data into SQL Server
+7. Open `queries.sql` in SSMS and run any query against `clindata`
+
+To reload the data after changes, drop the `dm` and `ex` tables in SSMS, then re-run steps 4–6.
+
+## Data Cleaning Summary
+
+- Patient IDs like `BRZ02-02092` were split into country, site, and subject number
+- Two different date formats across files were standardized to ISO 8601 (YYYY-MM-DD)
+- Gender and ethnicity numeric codes were mapped to text labels
+- Race was derived from a multi-column checklist (multiple boxes checked = MULTIPLE)
+- Dose values stored as strings like `100ml` were split into numeric value and unit
+- Study day was calculated relative to each patient's first infusion date (Day 1 = first visit)
+- Dosing has 142 rows (multiple visits per patient) while consent and demographics have 30 — all joins use ICF as the anchor so DM always has exactly 30 rows
+
+## Analytical Results Summary
+
+- 30 patients enrolled across multiple countries; 21 were randomized
+- Patients were split between PLACEBO and PEAR14 treatment arms
+- Average age across the study was in the mid-40s range
+- Most patients completed all scheduled infusion visits; a small number had dose adjustments
+- Enrollment was spread across several months, visible from the consent date trend query
+- Dose adjustments were more frequent in later visits than earlier ones
+
+## Packages Used
+
+`readr`, `readxl`, `dplyr`, `lubridate`, `DBI`, `odbc`, `writexl`
