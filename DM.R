@@ -13,7 +13,7 @@ dm <- data.frame(
   RFENDTC = NA,
   RFXSTDTC = to_iso_ymd(merged_dosing$infdate),
   RFXENDTC = NA,
-  RFICDTC = to_iso_dmy(icf_df$icf_dat),
+  RFICDTC = to_iso_ymd(icf_df$icf_dat),
   RFPENDTC = ifelse(icf_df$resign, icf_df$icf_dat2, NA) ,
   DTHDTC = NA,
   DTHFL = NA,
