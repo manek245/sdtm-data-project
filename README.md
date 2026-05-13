@@ -75,6 +75,9 @@ The pipeline runs in three main steps:
 
 ## R Packages Used
 
-`readr`, `readxl`, `writexl`, for data reading and writing
-`dplyr`, `lubridate`, for data cleaning
-`DBI`, `odbc` for sql server connetion and data pushing
+- `readr`, `readxl`, `writexl`,
+for data reading and writing
+- `dplyr`, `lubridate`, 
+for data cleaning
+- `DBI`, `odbc` 
+for sql server connetion and data pushing
