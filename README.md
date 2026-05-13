@@ -19,66 +19,62 @@ The source data comes from five files collected during a clinical trial involvin
 
 ```
 sdtm-data-project/
-├── data/               Raw source files (CSV and XLSX)
-├── DM.R                Creates the Demographics domain
-├── EX.R                Creates the Exposure domain
-├── push_to_db.R        Loads dm and ex into SQL Server
-├── schema.sql          Creates the clindata database and table structure
-├── queries.sql         SQL queries for data analysis
-├── README.md
-└── renv.lock           Package version snapshot
+├── raw data/           Raw source files (CSV and XLSX)
+├── R script/           R code files, (Data cleaning, connecting and pushing the data to server)
+├── sql script/         SQL database structure and queries
+├── README.md           Documentation for the project
 ```
 
 ## Database Schema
 
 The database is called `clindata` and contains two tables:
 
-**dm** — one row per patient. Primary key is `USUBJID` (unique subject ID). Contains demographics, treatment arm assignment, consent and reference dates, and geographic info.
+**dm** — one row per patient. Primary key is `USUBJID` (unique subject ID). 
+Contains basic demographics, treatment arm assignment, consent and reference dates, and geographic info.
 
-**ex** — one row per infusion visit. Primary key is `(USUBJID, EXSEQ)`. Foreign key links back to `dm` via `USUBJID`. Contains dose, infusion datetime, study day, and dose adjustment info.
+**ex** — one row per infusion visit. Primary key is `(USUBJID, EXSEQ)`. Foreign key links back to `dm` via `USUBJID`. 
+Contains dose, infusion datetime, study day, and dose adjustment info.
 
-Both tables have indexes on commonly queried columns like `COUNTRY`, `ARM`, and `USUBJID` to keep queries fast.
+Both tables have indexes on commonly queried columns like `COUNTRY`, `ARM`, and `USUBJID` to make queries fast.
 
 ## Pipeline
 
-The pipeline runs in four steps:
+The pipeline runs in three main steps:
 
-1. **DM.R** — reads ICF, Demo, Dosing, and Randomization files, joins them by patient ID, applies all cleaning and transformation, and produces the `dm` data frame (30 rows, one per patient)
-2. **EX.R** — reads the Dosing file, calculates visit sequences and study days, extracts numeric dose values, and produces the `ex` data frame (142 rows, one per infusion visit)
-3. **push_to_db.R** — connects to SQL Server on localhost and loads `dm` and `ex` into the `clindata` database. Skips tables that already exist to avoid accidental overwrites
-4. **queries.sql** — run in SSMS to explore and analyze the loaded data
+1. **source.R, DM.R, EX.R** — reads raw data, make the data ready for analysis by applying CDISC STDM standards for clinical data (`DM` and `EX` domains).
+2. **push_to_db.R** — connects to SQL Server on localhost and loads `dm` and `ex` into the `clindata` database.
+3. **queries.sql** — SQL queries running in MSSQL on our created database. They answer insightful question about the clinical research.
 
 ## How to Run
 
 1. Open the project in RStudio by double-clicking the `.Rproj` file
-2. Run `renv::restore()` to install all required packages
-3. Run `schema.sql` in SSMS to create the database and table structure
-4. Run `DM.R` in RStudio
-5. Run `EX.R` in RStudio
-6. Run `push_to_db.R` in RStudio to load the data into SQL Server
-7. Open `queries.sql` in SSMS and run any query against `clindata`
+2. Run `source_ds` to load all the raw files and helper functions
+3. Run `schema.sql` in MSSQL to create the database and table structure
+4. Run `DM.R` and `EX` in RStudio
+5. Run `push_to_db.R` in RStudio to push the data into SQL Server
+6. Open `queries.sql` in MSSQL and run any query on `clindata`
 
-To reload the data after changes, drop the `dm` and `ex` tables in SSMS, then re-run steps 4–6.
 
 ## Data Cleaning Summary
 
 - Patient IDs like `BRZ02-02092` were split into country, site, and subject number
-- Two different date formats across files were standardized to ISO 8601 (YYYY-MM-DD)
-- Gender and ethnicity numeric codes were mapped to text labels
+- Two different date formats across files were standardized to ISO 8601 (YYYY-MM-DD) format
+- Gender and ethnicity numeric codes were mapped to text labels ready for analysis
 - Race was derived from a multi-column checklist (multiple boxes checked = MULTIPLE)
 - Dose values stored as strings like `100ml` were split into numeric value and unit
 - Study day was calculated relative to each patient's first infusion date (Day 1 = first visit)
-- Dosing has 142 rows (multiple visits per patient) while consent and demographics have 30 — all joins use ICF as the anchor so DM always has exactly 30 rows
+- Dosing has 142 rows (multiple visits per patient) while consent and demographics have 30 — 
+  all joins use ICF as the anchor so DM always has exactly 30 rows (patients)
 
 ## Analytical Results Summary
 
 - 30 patients enrolled across multiple countries; 21 were randomized
 - Patients were split between PLACEBO and PEAR14 treatment arms
-- Average age across the study was in the mid-40s range
 - Most patients completed all scheduled infusion visits; a small number had dose adjustments
 - Enrollment was spread across several months, visible from the consent date trend query
-- Dose adjustments were more frequent in later visits than earlier ones
 
-## Packages Used
+## R Packages Used
 
-`readr`, `readxl`, `dplyr`, `lubridate`, `DBI`, `odbc`, `writexl`
+`readr`, `readxl`, `writexl`, for data reading and writing
+`dplyr`, `lubridate`, for data cleaning
+`DBI`, `odbc` for sql server connetion and data pushing
