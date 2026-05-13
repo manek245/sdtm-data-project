@@ -66,8 +66,52 @@ CREATE TABLE dbo.ex (
 );
 GO
 
+
+
+
+
+select *
+from ex;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 CREATE INDEX IX_dm_country  ON dbo.dm (COUNTRY);
 CREATE INDEX IX_dm_arm      ON dbo.dm (ARM);
 CREATE INDEX IX_ex_usubjid  ON dbo.ex (USUBJID);
 CREATE INDEX IX_ex_extrt    ON dbo.ex (EXTRT);
 GO
+
+
+
+

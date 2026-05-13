@@ -53,14 +53,13 @@ WHERE RFPENDTC IS NOT NULL;
 
 
 -- 8 showing 5 oldest patients
-SELECT TOP 5 USUBJID, COUNTRY, AGE, ARM
+SELECT TOP 5 USUBJID, COUNTRY, AGE
 FROM dm
 WHERE AGE IS NOT NULL
 ORDER BY AGE DESC;
 
 
 -- 9 age summary of all patients
-
 SELECT
 MIN(AGE) AS min_age,
 MAX(AGE) AS max_age,
@@ -69,9 +68,14 @@ FROM dm
 WHERE AGE IS NOT NULL;
 
 -- 10 which patients are older than the average age?
-SELECT USUBJID, COUNTRY, AGE
+SELECT USUBJID, COUNTRY, AGE, (
+                                SELECT AVG(AGE)
+                                FROM DM
+                                ) as average_age
 FROM dm
-WHERE AGE > (SELECT AVG(CAST(AGE AS FLOAT)) FROM dm WHERE AGE IS NOT NULL)
+WHERE AGE > (SELECT AVG(AGE) 
+                FROM dm 
+                WHERE AGE IS NOT NULL)
 ORDER BY AGE DESC;
 
 
