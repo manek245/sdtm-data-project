@@ -5,6 +5,7 @@
 con <- DBI::dbConnect(
   odbc::odbc(),
   Driver = "SQL Server",
+  #change to local server name before running
   Server = "INV-03516\\SQLEXPRESS",
   Database = "clindata",
   Trusted_Connection = "Yes"
