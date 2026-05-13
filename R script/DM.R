@@ -68,6 +68,6 @@ dm <- data.frame(
   COUNTRY = substr(icf_df$patid, 1, 3)
 )
 
-# run once
-writexl::write_xlsx(dm,
-                    "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\dm.xlsx")
+# # run once
+# writexl::write_xlsx(dm,
+#                     "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\dm.xlsx")

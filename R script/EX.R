@@ -21,6 +21,6 @@ ex <- data.frame(
   )
 )
 
-
-writexl::write_xlsx(ex,
-                    "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\ex.xlsx")
+# 
+# writexl::write_xlsx(ex,
+#                     "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\ex.xlsx")
