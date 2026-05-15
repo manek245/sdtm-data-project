@@ -1,20 +1,19 @@
 -- queries on the dm and ex
 
 USE clindata;
-
--- 1 patient count
+--1
+-- patient count
 SELECT COUNT(*) AS total_patients FROM dm;
 
-
--- 2 how many patients are there per country?
+--2
+-- how many patients are there per country?
 SELECT COUNTRY, COUNT(*) AS patients
 FROM dm
 GROUP BY COUNTRY
 ORDER BY patients DESC;
 
-
--- 3 how many patients were enrolled per month?
-
+--3
+-- how many patients were enrolled per month?
 SELECT
 SUBSTRING(RFICDTC, 1, 7)  AS enrollment_month,
 COUNT(*)                   AS patients_enrolled
@@ -25,41 +24,34 @@ ORDER BY enrollment_month;
 
 
 
-
--- 4 how many patients per treatment arm?
+--4
+-- how many patients per treatment arm?
 SELECT ARM, COUNT(*) AS patients
 FROM dm
 GROUP BY ARM;
 
---  5 what is the gender breakdown?
+--5
+-- what is the gender ratio?
 SELECT SEX, COUNT(*) AS count
 FROM dm
 GROUP BY SEX
 ORDER BY count DESC;
 
-
--- 6 what is the racial breakdown?
+--6
+-- what is the race ratio?
 SELECT RACE, COUNT(*) AS count
 FROM dm
 GROUP BY RACE
 ORDER BY count DESC;
 
-
---  7 which patients withdrew from the study?
+--7
+-- which patients withdrew from the study?
 SELECT USUBJID, COUNTRY, RFPENDTC AS withdrawal_date
 FROM dm
 WHERE RFPENDTC IS NOT NULL;
 
-
-
--- 8 showing 5 oldest patients
-SELECT TOP 5 USUBJID, COUNTRY, AGE
-FROM dm
-WHERE AGE IS NOT NULL
-ORDER BY AGE DESC;
-
-
--- 9 age summary of all patients
+--8
+-- age summary of all patients
 SELECT
 MIN(AGE) AS min_age,
 MAX(AGE) AS max_age,
@@ -67,9 +59,9 @@ ROUND(AVG(AGE),1) AS avg_age
 FROM dm
 WHERE AGE IS NOT NULL;
 
--- 10 which patients are older than the average age?
-SELECT USUBJID, COUNTRY, AGE, (
-                                SELECT AVG(AGE)
+--9
+-- which patients are older than the average age?
+SELECT USUBJID, COUNTRY, AGE, ( SELECT AVG(AGE)
                                 FROM DM
                                 ) as average_age
 FROM dm
@@ -78,50 +70,34 @@ WHERE AGE > (SELECT AVG(AGE)
                 WHERE AGE IS NOT NULL)
 ORDER BY AGE DESC;
 
-
-
--- 11 infusion visits recorded
-SELECT COUNT(*) AS total_infusions FROM ex;
-
-
-
--- 12 which patients had more visits than the average patient?
-SELECT USUBJID, COUNT(*) AS visits
+--10
+-- which patients had more visits than the average patient 
+SELECT USUBJID, COUNT(*) AS visits, ((SELECT AVG(visit_count) FROM (
+    SELECT COUNT(*) AS visit_count
+    FROM ex
+    GROUP BY USUBJID
+  ))) AS avg_visits
 FROM ex
 GROUP BY USUBJID
 HAVING COUNT(*) > (
   SELECT AVG(visit_count)
-  FROM (
-    SELECT COUNT(*) AS visit_count
+  FROM ( SELECT COUNT(*) AS visit_count
     FROM ex
-    GROUP BY USUBJID
-  ) AS counts
+    GROUP BY USUBJID)
 )
 ORDER BY visits DESC;
 
 
-
--- 13 what doses were given and how often?
+--11
+-- what doses were given and how often?
 SELECT EXDOSE, EXDOSEU, COUNT(*) AS times_given
 FROM ex
 GROUP BY EXDOSE, EXDOSEU
 ORDER BY times_given desc;
 
-
--- 14 were there dose adjustments? Show reason and frequency
-SELECT EXADJ AS reason, COUNT(*) AS occurrences
-FROM ex
-WHERE EXADJ IS NOT NULL
-GROUP BY EXADJ
-ORDER BY occurrences desc;
-
-
-
-
+--12
 -- CTE s
-
-
--- 15 average age and patient count per country
+-- average age and patient count per country
 WITH country_stats AS (
   SELECT
     COUNTRY,
@@ -135,8 +111,8 @@ SELECT COUNTRY, patients, avg_age
 FROM country_stats
 ORDER BY patients DESC;
 
-
--- 16 which patients received a dose adjustment at any point?
+--13
+-- which patients received a dose adjustment at any point?
 WITH adjusted AS (
   SELECT DISTINCT USUBJID
   FROM ex
@@ -147,7 +123,8 @@ FROM dm d
 JOIN adjusted a ON a.USUBJID = d.USUBJID
 ORDER BY d.COUNTRY;
 
--- 17 visit breakdown per treatment arm , total and average visits per patient
+--14
+-- visit breakdown per treatment arm , total and average visits per patient
 WITH visits_per_patient AS (
   SELECT e.USUBJID, d.ARM, COUNT(*) AS visit_count
   FROM ex e
@@ -164,9 +141,8 @@ GROUP BY ARM;
 
 
 --joins
-
-
--- 18 patient with their first and last infusion date
+--15
+-- patient with their first and last infusion date
 SELECT
 d.USUBJID,
 d.COUNTRY,
@@ -178,7 +154,8 @@ LEFT JOIN ex e ON e.USUBJID = d.USUBJID
 GROUP BY d.USUBJID, d.COUNTRY, d.ARM
 ORDER BY d.COUNTRY;
 
--- 19 placebo patients who had at least one dose adjustment
+--16
+-- placebo patients who had at least one dose adjustment
 SELECT DISTINCT
 d.USUBJID,
 d.COUNTRY,
@@ -192,8 +169,8 @@ ORDER BY d.COUNTRY;
 
 
 -- WINDOW FUNCTIONS
-
--- 20 rank patients by age and each country
+--17
+-- rank patients by age and each country
 SELECT
 USUBJID,
 COUNTRY,
@@ -202,7 +179,8 @@ RANK() OVER (PARTITION BY COUNTRY ORDER BY AGE DESC) AS age_rank_in_country
 FROM dm
 WHERE AGE IS NOT NULL;
 
--- 21 the running total of visits per patient for each infusion visit,  
+--18
+-- the running total of visits per patient for each infusion visit,  
 SELECT
 USUBJID,
 EXSEQ,
@@ -212,7 +190,8 @@ SUM(1) OVER (PARTITION BY USUBJID ORDER BY EXSEQ) AS cumulative_visits
 FROM ex
 ORDER BY USUBJID, EXSEQ;
 
--- 22 Ccmpare each patient's visit count to the average 
+--19
+-- Ccmpare each patient's visit count to the average 
 SELECT DISTINCT
 USUBJID,
 COUNT(*) OVER (PARTITION BY USUBJID) AS patient_visits,
