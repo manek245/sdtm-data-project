@@ -33,7 +33,9 @@ to_iso_ymd <- function(date) {
 }
 
 to_iso_ymd_hms <- function(date, time) {
-  paste(as.Date(date), time)
+  ifelse(is.na(time),
+         as.character(as.Date(date)),
+         paste0(as.Date(date), "T", time))
 }
 
 get_day <- function(start, end) {
