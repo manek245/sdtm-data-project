@@ -7,7 +7,7 @@ race_col <- demo_df[, c("caucas", "black", "indian", "asian", "hawaian")]
 dm <- data.frame(
   STUDYID = icf_df$study,
   DOMAIN = "DM",
-  USUBJID = paste0(icf_df$study, substr(icf_df$patid, 4, nchar(icf_df$patid))),
+  USUBJID = paste0(icf_df$study,"-",icf_df$patid),
   SUBJID = substr(icf_df$patid, 7, nchar(icf_df$patid)),
   RFSTDTC = to_iso_ymd(merged_dosing$infdate),
   RFENDTC = NA,
@@ -17,14 +17,14 @@ dm <- data.frame(
   RFPENDTC = ifelse(icf_df$resign, icf_df$icf_dat2, NA) ,
   DTHDTC = NA,
   DTHFL = NA,
-  SITEID = substr(icf_df$patid, 4, 5),
+  SITEID = substr(icf_df$patid, 1, 5),
   AGE = as.numeric(demo_df$ageyr),
   AGEU = "YEARS",
   SEX = dplyr::case_when(
     demo_df$gender == 1 ~ "M",
     demo_df$gender == 2 ~ "F",
     demo_df$gender == 99 ~ "U",
-    demo_df$gender == 0 ~ "UNDIFFERENTIATED"
+    demo_df$gender == 0 ~ "U"
   ),
   RACE = ifelse(
     rowSums(as.data.frame(lapply(
@@ -36,10 +36,10 @@ dm <- data.frame(
       "WHITE",
       ifelse(
         as.numeric(demo_df$black) == 1,
-        "BLACK",
+        "BLACK OR AFRICAN AMERICAN",
         ifelse(
           as.numeric(demo_df$indian) == 1,
-          "AMERICAN INDIAN",
+          "AMERICAN INDIAN OR ALASKA NATIVE",
           ifelse(
             as.numeric(demo_df$asian) == 1,
             "ASIAN",
@@ -59,15 +59,21 @@ dm <- data.frame(
     "HISPANIC OR LATINO",
     "NOT HISPANIC OR LATINO"
   ),
-  ARMCD = ifelse(merged_demo$rand == "PLACEBO", "P", "D"),
+  ARMCD = ifelse(merged_demo$rand == "PLACEBO", "PLCB", "PR14"),
   ARM = ifelse(merged_demo$rand == "PLACEBO", "PLACEBO", "PEAR14"),
-  ACTARMCD = NA,
-  ACTARM = NA,
+  ACTARMCD = ifelse(merged_demo$rand == "PLACEBO", "PLCB", "PR14"),
+  ACTARM = ifelse(merged_demo$rand == "PLACEBO", "PLACEBO", "PEAR14"),
   ARMNRS = NA,
   ACTARMUD = NA,
-  COUNTRY = substr(icf_df$patid, 1, 3)
+  COUNTRY = to_iso_country(substr(icf_df$patid, 1, 3))
 )
 
+dm<- dm |> dplyr::arrange(USUBJID)
+dm2<- dm2 |> dplyr::arrange(USUBJID)
+
+
+
+View(dm)
 # # run once
 # writexl::write_xlsx(dm,
 #                     "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\dm.xlsx")
