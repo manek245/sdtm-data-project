@@ -69,11 +69,7 @@ dm <- data.frame(
 )
 
 dm<- dm |> dplyr::arrange(USUBJID)
-dm2<- dm2 |> dplyr::arrange(USUBJID)
 
-
-
-View(dm)
-# # run once
-# writexl::write_xlsx(dm,
-#                     "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\dm.xlsx")
+# run once
+writexl::write_xlsx(dm,
+                    "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\dm.xlsx")

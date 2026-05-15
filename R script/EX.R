@@ -7,9 +7,7 @@ dosing_min <- merge(dosing_df,
 ex <- data.frame(
   STUDYID = dosing_df$study,
   DOMAIN = "EX",
-  USUBJID = paste0(dosing_df$study, substr(
-    dosing_df$patid, 4, nchar(dosing_df$patid)
-  )),
+  USUBJID = paste0(dosing_df$study, "-", dosing_df$patid),
   EXSEQ = ave(seq_along(dosing_df$patid), dosing_df$patid, FUN = seq_along),
   EXTRT = dosing_df$rand,
   EXDOSE = as.numeric(gsub("[^0-9.]", "", dosing_df$dose)),
@@ -20,7 +18,8 @@ ex <- data.frame(
   EXSTDY = paste("Day",get_day(dosing_min$infdate_first, dosing_min$infdate)
   )
 )
+ex<- ex |> dplyr::arrange(USUBJID)
 
-# 
-# writexl::write_xlsx(ex,
-#                     "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\ex.xlsx")
+# run once
+writexl::write_xlsx(ex,
+                    "C:\\Users\\ManeKarapetyan\\Desktop\\sdtm-data-project\\ex.xlsx")
